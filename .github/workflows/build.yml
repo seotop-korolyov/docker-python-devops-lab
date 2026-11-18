@@ -29,5 +29,7 @@ jobs:
 
           data = json.load(sys.stdin)
           if data["status"] == "ok":
+            print("Health check PASSED")
             sys.exit(0)
+          print("Health check FAILED")
           sys.exit(1)'
