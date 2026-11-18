@@ -33,3 +33,12 @@ jobs:
             sys.exit(0)
           print("Health check FAILED")
           sys.exit(1)'
+
+      - name: Inspect container
+        if: always()
+        run: |
+          docker ps -a --filter "name=ci-api"
+          docker logs ci-api
+          docker inspect --format='{{.State.Status}} \
+          | RestartCount={{.RestartCount}} \
+          | ExitCode={{.State.ExitCode}}' ci-api
