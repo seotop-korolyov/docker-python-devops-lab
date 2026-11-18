@@ -35,7 +35,7 @@ jobs:
           sys.exit(1)'
 
       - name: Inspect container
-        if: always()
+        if: failure()
         run: |
           docker ps -a --filter "name=ci-api"
           docker logs ci-api
