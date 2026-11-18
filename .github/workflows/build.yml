@@ -20,6 +20,7 @@ jobs:
       - name: ci-api
         run: |
           docker run -d --name ci-api -p 8000:8000 docker-python-devops-lab:dev
+          sleep 30
           curl -w '%{http_code}\n' -o /dev/null -s -f --retry 5 --retry-delay 2 \
           --show-error --retry-connrefused \
           http://127.0.0.1:8000/health
