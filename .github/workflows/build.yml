@@ -1,0 +1,44 @@
+name: Docker CI
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+
+      - name: Build Image
+        run: |
+          docker build -t docker-python-devops-lab:dev .
+
+      - name: ci-api
+        run: |
+          docker run -d --name ci-api -p 8000:8000 docker-python-devops-lab:dev
+
+          curl -fsS --retry 5 --retry-delay 2 \
+          --retry-connrefused --retry-all-errors \
+          http://127.0.0.1:8000/health | python3 -c '
+          import json
+          import sys
+
+          data = json.load(sys.stdin)
+          if data["status"] == "ok":
+            print("Health check PASSED")
+            sys.exit(0)
+          print("Health check FAILED")
+          sys.exit(1)'
+
+      - name: Inspect container
+        if: failure()
+        run: |
+          docker ps -a --filter "name=ci-api"
+          docker logs ci-api
+          docker inspect --format='{{.State.Status}} \
+          | RestartCount={{.RestartCount}} \
+          | ExitCode={{.State.ExitCode}}' ci-api
