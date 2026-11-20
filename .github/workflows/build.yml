@@ -4,6 +4,13 @@ on:
   pull_request:
     branches:
       - main
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  packages: write
 
 jobs:
   build:
@@ -42,3 +49,20 @@ jobs:
           docker inspect --format='{{.State.Status}} \
           | RestartCount={{.RestartCount}} \
           | ExitCode={{.State.ExitCode}}' ci-api
+
+      - name: Login to GHCR
+        if: github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish Docker image
+        if: github.event_name == 'push'
+        run: |
+          docker tag docker-python-devops-lab:dev ghcr.io/seotop-korolyov/docker-python-devops-lab:latest
+          docker push ghcr.io/seotop-korolyov/docker-python-devops-lab:latest
+
+          docker tag docker-python-devops-lab:dev ghcr.io/seotop-korolyov/docker-python-devops-lab:${{ github.sha }}
+          docker push ghcr.io/seotop-korolyov/docker-python-devops-lab:${{ github.sha }}
