@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+
+kind: Deployment
+
+metadata:
+  name: fastapi-app
+  namespace: devops-lab
+
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fastapi-app
+
+  template:
+    metadata:
+      labels:
+        app: fastapi-app
+
+    spec:
+      containers:
+        - name: fastapi
+          image: ghcr.io/seotop-korolyov/docker-python-devops-lab:38c2f0d63d46b3468fc8ceb3f61772bee3f7379b
+
+          ports:
+            - containerPort: 8000
+
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+
+
+
