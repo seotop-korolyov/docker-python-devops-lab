@@ -91,3 +91,38 @@ jobs:
       - name: Validate all YAML
         run: |
           kubeconform -strict -summary -kubernetes-version 1.36.0 k8s/*.yaml
+
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [build, validate-k8s]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure deployment SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.FASTAPI_CD_SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.FASTAPI_CD_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/fastapi_cd
+          chmod 600 ~/.ssh/fastapi_cd
+
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Deploy FastAPI to Kubernetes
+        env:
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          ssh \
+            -i ~/.ssh/fastapi_cd \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            -o BatchMode=yes \
+            fastapi-deploy@83.229.87.152 \
+            "deploy ${COMMIT_SHA}"
